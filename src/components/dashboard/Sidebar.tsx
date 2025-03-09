@@ -9,6 +9,9 @@ import {
   HeadphonesIcon,
   HelpCircle,
   CreditCard,
+  Bot,
+  Link,
+  Coins,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -50,6 +53,33 @@ export default function Sidebar({ className }: SidebarProps) {
           <div className="h-[1px] bg-border" />
         </div>
 
+        <Accordion type="single" collapsible className="w-full">
+          <AccordionItem value="broker-auth" className="border-none">
+            <AccordionTrigger className="flex items-center space-x-3 px-3 py-2 rounded-lg hover:bg-accent transition-colors">
+              <div className="flex items-center space-x-3">
+                <Link className="h-5 w-5" />
+                <span>Broker Auth</span>
+              </div>
+            </AccordionTrigger>
+            <AccordionContent>
+              <div className="pl-11 space-y-2">
+                <a
+                  onClick={() => navigate("/my-apis")}
+                  className="block py-2 hover:text-primary transition-colors cursor-pointer"
+                >
+                  My APIs
+                </a>
+                <a
+                  onClick={() => navigate("/connect/tradingview")}
+                  className="block py-2 hover:text-primary transition-colors cursor-pointer"
+                >
+                  Add API
+                </a>
+              </div>
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
+
         <Accordion type="single" collapsible className="w-full space-y-2">
           <AccordionItem value="tradingview" className="border-none">
             <AccordionTrigger className="flex items-center space-x-3 px-3 py-2 rounded-lg hover:bg-accent transition-colors">
@@ -61,14 +91,8 @@ export default function Sidebar({ className }: SidebarProps) {
             <AccordionContent>
               <div className="pl-11 space-y-2">
                 <a
-                  onClick={() => navigate("/connect/tradingview")}
+                  onClick={() => navigate("/webhook-url")}
                   className="block py-2 hover:text-primary transition-colors cursor-pointer"
-                >
-                  Broker Auth
-                </a>
-                <a
-                  href="#"
-                  className="block py-2 hover:text-primary transition-colors"
                 >
                   Webhook URL
                 </a>
@@ -85,10 +109,16 @@ export default function Sidebar({ className }: SidebarProps) {
                   JSON
                 </a>
                 <a
-                  href="#"
-                  className="block py-2 hover:text-primary transition-colors"
+                  onClick={() => navigate("/trade-logs")}
+                  className="block py-2 hover:text-primary transition-colors cursor-pointer"
                 >
                   Trade Logs
+                </a>
+                <a
+                  onClick={() => navigate("/manage-tradingview")}
+                  className="block py-2 hover:text-primary transition-colors cursor-pointer"
+                >
+                  Manage
                 </a>
               </div>
             </AccordionContent>
@@ -104,16 +134,16 @@ export default function Sidebar({ className }: SidebarProps) {
             <AccordionContent>
               <div className="pl-11 space-y-2">
                 <a
-                  onClick={() => navigate("/connect/scalping")}
-                  className="block py-2 hover:text-primary transition-colors cursor-pointer"
-                >
-                  Broker Auth
-                </a>
-                <a
                   href="#"
                   className="block py-2 hover:text-primary transition-colors"
                 >
                   Trade Panel
+                </a>
+                <a
+                  onClick={() => navigate("/manage-scalping")}
+                  className="block py-2 hover:text-primary transition-colors cursor-pointer"
+                >
+                  Manage
                 </a>
               </div>
             </AccordionContent>
@@ -129,20 +159,14 @@ export default function Sidebar({ className }: SidebarProps) {
             <AccordionContent>
               <div className="pl-11 space-y-2">
                 <a
-                  onClick={() => navigate("/connect/copytrading")}
-                  className="block py-2 hover:text-primary transition-colors cursor-pointer"
-                >
-                  Broker Authentication
-                </a>
-                <a
                   href="#"
                   className="block py-2 hover:text-primary transition-colors"
                 >
                   Strategy
                 </a>
                 <a
-                  href="#"
-                  className="block py-2 hover:text-primary transition-colors"
+                  onClick={() => navigate("/manage-copytrading")}
+                  className="block py-2 hover:text-primary transition-colors cursor-pointer"
                 >
                   Manage
                 </a>
@@ -180,15 +204,65 @@ export default function Sidebar({ className }: SidebarProps) {
               </div>
             </AccordionContent>
           </AccordionItem>
+
+          <AccordionItem value="bots" className="border-none">
+            <AccordionTrigger className="flex items-center space-x-3 px-3 py-2 rounded-lg hover:bg-accent transition-colors">
+              <div className="flex items-center space-x-3">
+                <Bot className="h-5 w-5" />
+                <span>Bots</span>
+              </div>
+            </AccordionTrigger>
+            <AccordionContent>
+              <div className="pl-11 space-y-2">
+                <a
+                  href="#"
+                  className="block py-2 hover:text-primary transition-colors"
+                >
+                  NSE/BSE
+                </a>
+                <a
+                  href="#"
+                  className="block py-2 hover:text-primary transition-colors"
+                >
+                  Forex
+                </a>
+                <a
+                  href="#"
+                  className="block py-2 hover:text-primary transition-colors"
+                >
+                  Crypto
+                </a>
+              </div>
+            </AccordionContent>
+          </AccordionItem>
         </Accordion>
 
-        <a
-          href="#pricing"
-          className="flex items-center space-x-3 px-3 py-2 rounded-lg hover:bg-accent transition-colors"
-        >
-          <CreditCard className="h-5 w-5" />
-          <span>Pricing</span>
-        </a>
+        <Accordion type="single" collapsible className="w-full space-y-2">
+          <AccordionItem value="pricing" className="border-none">
+            <AccordionTrigger className="flex items-center space-x-3 px-3 py-2 rounded-lg hover:bg-accent transition-colors">
+              <div className="flex items-center space-x-3">
+                <CreditCard className="h-5 w-5" />
+                <span>Pricing</span>
+              </div>
+            </AccordionTrigger>
+            <AccordionContent>
+              <div className="pl-11 space-y-2">
+                <a
+                  onClick={() => navigate("#pricing")}
+                  className="block py-2 hover:text-primary transition-colors cursor-pointer"
+                >
+                  Buy Z Coins
+                </a>
+                <a
+                  onClick={() => navigate("/pricing-history")}
+                  className="block py-2 hover:text-primary transition-colors cursor-pointer"
+                >
+                  Transaction History
+                </a>
+              </div>
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
 
         <div className="py-2">
           <div className="h-[1px] bg-border" />

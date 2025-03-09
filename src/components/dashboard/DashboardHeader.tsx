@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   DropdownMenu,
@@ -24,6 +24,29 @@ export default function DashboardHeader({
 }: DashboardHeaderProps) {
   const navigate = useNavigate();
   const { theme, setTheme } = useTheme();
+  const [walletBalance, setWalletBalance] = useState(() => {
+    return parseInt(localStorage.getItem("zCoinsBalance") || "100000");
+  });
+
+  // Update zCoins when localStorage changes
+  useEffect(() => {
+    const handleStorageChange = () => {
+      setWalletBalance(
+        parseInt(localStorage.getItem("zCoinsBalance") || "100000"),
+      );
+    };
+
+    window.addEventListener("storage", handleStorageChange);
+    return () => window.removeEventListener("storage", handleStorageChange);
+  }, []);
+
+  // Initialize wallet with 100,000 Z Coins if not already set
+  useEffect(() => {
+    if (!localStorage.getItem("zCoinsBalance")) {
+      localStorage.setItem("zCoinsBalance", "100000");
+      setWalletBalance(100000);
+    }
+  }, []);
 
   const initials = username
     .split(" ")
@@ -40,7 +63,9 @@ export default function DashboardHeader({
           {/* Z Coins Display */}
           <div className="flex items-center gap-2 bg-primary/10 px-3 py-1.5 rounded-full">
             <Coins className="h-5 w-5 text-primary" />
-            <span className="font-medium">{zCoins.toLocaleString()}</span>
+            <span className="font-medium">
+              {walletBalance.toLocaleString()}
+            </span>
           </div>
 
           {/* Theme Toggle */}

@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import DashboardHeader from "./DashboardHeader";
 import Sidebar from "./Sidebar";
 import PricingSection from "./PricingSection";
+import ApiStatus from "./ApiStatus";
 
 export default function Dashboard() {
   const [currentPage, setCurrentPage] = useState("home");
@@ -27,7 +28,18 @@ export default function Dashboard() {
         <Sidebar />
         <main className="flex-1 p-6 overflow-auto">
           {currentPage === "pricing" && <PricingSection />}
-          {currentPage === "home" && <div>Welcome to Dashboard</div>}
+          {currentPage === "home" && (
+            <div className="w-full">
+              <div className="p-6 bg-card rounded-lg border border-border mb-6">
+                <h2 className="text-2xl font-bold mb-2">
+                  Welcome to Dashboard
+                </h2>
+                <p className="text-muted-foreground">
+                  Manage your trading accounts and monitor your performance
+                </p>
+              </div>
+            </div>
+          )}
         </main>
       </div>
     </div>

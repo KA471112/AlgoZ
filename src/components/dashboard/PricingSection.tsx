@@ -106,6 +106,38 @@ export default function PricingSection({
                 <Button
                   className="w-full"
                   variant={tier.popular ? "default" : "outline"}
+                  onClick={() => {
+                    // Add coins to wallet
+                    const currentBalance = parseInt(
+                      localStorage.getItem("zCoinsBalance") || "100000",
+                    );
+                    const newBalance = currentBalance + tier.coins;
+                    localStorage.setItem(
+                      "zCoinsBalance",
+                      newBalance.toString(),
+                    );
+
+                    // Record transaction in history
+                    const history = JSON.parse(
+                      localStorage.getItem("zCoinsHistory") || "[]",
+                    );
+                    history.push({
+                      id: Date.now(),
+                      type: "purchase",
+                      amount: tier.coins,
+                      description: `Purchased ${tier.name} Plan - ${tier.coins} Z Coins`,
+                      date: new Date().toISOString(),
+                    });
+                    localStorage.setItem(
+                      "zCoinsHistory",
+                      JSON.stringify(history),
+                    );
+
+                    // Force refresh
+                    window.dispatchEvent(new Event("storage"));
+
+                    alert(`Successfully purchased ${tier.coins} Z Coins!`);
+                  }}
                 >
                   {tier.buttonText}
                 </Button>
