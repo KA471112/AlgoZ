@@ -10,7 +10,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Coins, Moon, Sun } from "lucide-react";
 import { useTheme } from "@/components/theme-provider";
-import { useAuth } from "@/lib/auth";
+import { useAuth } from "@/lib/mockAuth";
 
 interface DashboardHeaderProps {
   username?: string;

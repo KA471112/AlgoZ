@@ -3,8 +3,7 @@ import DashboardHeader from "./DashboardHeader";
 import Sidebar from "./Sidebar";
 import PricingSection from "./PricingSection";
 import ApiStatus from "./ApiStatus";
-import { useAuth } from "@/lib/auth";
-import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/lib/mockAuth";
 
 export default function Dashboard() {
   const [currentPage, setCurrentPage] = useState("home");
@@ -24,21 +23,23 @@ export default function Dashboard() {
     return () => window.removeEventListener("hashchange", handleHashChange);
   }, []);
 
-  // Fetch API connections
+  // Mock API connections
   useEffect(() => {
     if (user) {
-      const fetchApiConnections = async () => {
-        const { data, error } = await supabase
-          .from("api_connections")
-          .select("*")
-          .eq("user_id", user.id);
-
-        if (!error && data) {
-          setApiConnections(data);
-        }
-      };
-
-      fetchApiConnections();
+      // Mock data instead of fetching from Supabase
+      const mockConnections = [
+        {
+          app_name: "TradingView App",
+          broker: "Zerodha",
+          is_active: true,
+        },
+        {
+          app_name: "Scalping Tool",
+          broker: "Upstox",
+          is_active: false,
+        },
+      ];
+      setApiConnections(mockConnections);
     }
   }, [user]);
 

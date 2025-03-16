@@ -11,8 +11,7 @@ CREATE TABLE IF NOT EXISTS profiles (
   email TEXT UNIQUE NOT NULL,
   phone TEXT,
   is_admin BOOLEAN DEFAULT FALSE,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
 -- Create client ID counter table
@@ -22,59 +21,9 @@ CREATE TABLE IF NOT EXISTS client_id_counter (
 );
 
 -- Initialize counter with 1
-INSERT INTO client_id_counter (id, next_id) VALUES (1, 2) ON CONFLICT (id) DO NOTHING;
-
--- Create Z Coins balance table
-CREATE TABLE IF NOT EXISTS z_coins_balance (
-  id UUID PRIMARY KEY REFERENCES profiles(id) ON DELETE CASCADE,
-  balance INTEGER NOT NULL DEFAULT 0,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
--- Create Z Coins transaction history table
-CREATE TABLE IF NOT EXISTS z_coins_transactions (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
-  amount INTEGER NOT NULL,
-  transaction_type TEXT NOT NULL,
-  description TEXT,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
--- Create API connections table
-CREATE TABLE IF NOT EXISTS api_connections (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
-  broker TEXT NOT NULL,
-  app_name TEXT NOT NULL,
-  api_key TEXT,
-  secret_key TEXT,
-  is_active BOOLEAN DEFAULT TRUE,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
--- Create subscriptions table
-CREATE TABLE IF NOT EXISTS subscriptions (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
-  api_id UUID REFERENCES api_connections(id) ON DELETE CASCADE,
-  service_type TEXT NOT NULL,
-  start_date TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  expiry_date TIMESTAMP WITH TIME ZONE NOT NULL,
-  is_active BOOLEAN DEFAULT TRUE,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
--- Create webhooks table
-CREATE TABLE IF NOT EXISTS webhooks (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
-  webhook_url TEXT NOT NULL,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
+INSERT INTO client_id_counter (id, next_id)
+VALUES (1, 2)
+ON CONFLICT (id) DO NOTHING;
 
 -- Create function to generate next client ID
 CREATE OR REPLACE FUNCTION get_next_client_id()
@@ -99,9 +48,59 @@ BEGIN
 END;
 $$;
 
--- Create RLS policies
+-- Create Z Coins balance table
+CREATE TABLE IF NOT EXISTS z_coins_balance (
+  id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  balance INTEGER NOT NULL DEFAULT 0,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
 
--- Enable RLS on tables
+-- Create Z Coins transactions table
+CREATE TABLE IF NOT EXISTS z_coins_transactions (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  amount INTEGER NOT NULL,
+  transaction_type TEXT NOT NULL,
+  description TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Create API connections table
+CREATE TABLE IF NOT EXISTS api_connections (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  broker TEXT NOT NULL,
+  app_name TEXT NOT NULL,
+  api_key TEXT NOT NULL,
+  secret_key TEXT NOT NULL,
+  totp TEXT,
+  is_active BOOLEAN DEFAULT TRUE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Create subscriptions table
+CREATE TABLE IF NOT EXISTS subscriptions (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  api_connection_id UUID REFERENCES api_connections(id) ON DELETE CASCADE,
+  service_type TEXT NOT NULL,
+  start_date TIMESTAMP WITH TIME ZONE NOT NULL,
+  expiry_date TIMESTAMP WITH TIME ZONE NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Create webhooks table
+CREATE TABLE IF NOT EXISTS webhooks (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  webhook_url TEXT NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Set up Row Level Security (RLS)
+
+-- Enable RLS on all tables
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE z_coins_balance ENABLE ROW LEVEL SECURITY;
 ALTER TABLE z_coins_transactions ENABLE ROW LEVEL SECURITY;
@@ -109,54 +108,64 @@ ALTER TABLE api_connections ENABLE ROW LEVEL SECURITY;
 ALTER TABLE subscriptions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE webhooks ENABLE ROW LEVEL SECURITY;
 
--- Create policies for profiles
+-- Profiles policies
 DROP POLICY IF EXISTS "Users can view their own profile" ON profiles;
 CREATE POLICY "Users can view their own profile"
   ON profiles FOR SELECT
   USING (auth.uid() = id);
 
-DROP POLICY IF EXISTS "Admins can view all profiles" ON profiles;
-CREATE POLICY "Admins can view all profiles"
+DROP POLICY IF EXISTS "Admin can view all profiles" ON profiles;
+CREATE POLICY "Admin can view all profiles"
   ON profiles FOR SELECT
   USING (EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND is_admin = TRUE));
 
--- Create policies for z_coins_balance
+-- Z Coins balance policies
 DROP POLICY IF EXISTS "Users can view their own balance" ON z_coins_balance;
 CREATE POLICY "Users can view their own balance"
   ON z_coins_balance FOR SELECT
   USING (auth.uid() = id);
 
-DROP POLICY IF EXISTS "Admins can view all balances" ON z_coins_balance;
-CREATE POLICY "Admins can view all balances"
+DROP POLICY IF EXISTS "Admin can view all balances" ON z_coins_balance;
+CREATE POLICY "Admin can view all balances"
   ON z_coins_balance FOR SELECT
   USING (EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND is_admin = TRUE));
 
-DROP POLICY IF EXISTS "Admins can update balances" ON z_coins_balance;
-CREATE POLICY "Admins can update balances"
+DROP POLICY IF EXISTS "Admin can update all balances" ON z_coins_balance;
+CREATE POLICY "Admin can update all balances"
   ON z_coins_balance FOR UPDATE
   USING (EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND is_admin = TRUE));
 
--- Create policies for z_coins_transactions
+-- Z Coins transactions policies
 DROP POLICY IF EXISTS "Users can view their own transactions" ON z_coins_transactions;
 CREATE POLICY "Users can view their own transactions"
   ON z_coins_transactions FOR SELECT
   USING (auth.uid() = user_id);
 
-DROP POLICY IF EXISTS "Admins can view all transactions" ON z_coins_transactions;
-CREATE POLICY "Admins can view all transactions"
+DROP POLICY IF EXISTS "Admin can view all transactions" ON z_coins_transactions;
+CREATE POLICY "Admin can view all transactions"
   ON z_coins_transactions FOR SELECT
   USING (EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND is_admin = TRUE));
 
-DROP POLICY IF EXISTS "Admins can insert transactions" ON z_coins_transactions;
-CREATE POLICY "Admins can insert transactions"
+DROP POLICY IF EXISTS "Users can insert their own transactions" ON z_coins_transactions;
+CREATE POLICY "Users can insert their own transactions"
+  ON z_coins_transactions FOR INSERT
+  WITH CHECK (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Admin can insert any transaction" ON z_coins_transactions;
+CREATE POLICY "Admin can insert any transaction"
   ON z_coins_transactions FOR INSERT
   WITH CHECK (EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND is_admin = TRUE));
 
--- Create policies for api_connections
+-- API connections policies
 DROP POLICY IF EXISTS "Users can view their own API connections" ON api_connections;
 CREATE POLICY "Users can view their own API connections"
   ON api_connections FOR SELECT
   USING (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Admin can view all API connections" ON api_connections;
+CREATE POLICY "Admin can view all API connections"
+  ON api_connections FOR SELECT
+  USING (EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND is_admin = TRUE));
 
 DROP POLICY IF EXISTS "Users can insert their own API connections" ON api_connections;
 CREATE POLICY "Users can insert their own API connections"
@@ -173,35 +182,30 @@ CREATE POLICY "Users can delete their own API connections"
   ON api_connections FOR DELETE
   USING (auth.uid() = user_id);
 
-DROP POLICY IF EXISTS "Admins can view all API connections" ON api_connections;
-CREATE POLICY "Admins can view all API connections"
-  ON api_connections FOR SELECT
-  USING (EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND is_admin = TRUE));
-
--- Create policies for subscriptions
+-- Subscriptions policies
 DROP POLICY IF EXISTS "Users can view their own subscriptions" ON subscriptions;
 CREATE POLICY "Users can view their own subscriptions"
   ON subscriptions FOR SELECT
   USING (auth.uid() = user_id);
 
-DROP POLICY IF EXISTS "Admins can view all subscriptions" ON subscriptions;
-CREATE POLICY "Admins can view all subscriptions"
+DROP POLICY IF EXISTS "Admin can view all subscriptions" ON subscriptions;
+CREATE POLICY "Admin can view all subscriptions"
   ON subscriptions FOR SELECT
   USING (EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND is_admin = TRUE));
 
--- Create policies for webhooks
+DROP POLICY IF EXISTS "Users can insert their own subscriptions" ON subscriptions;
+CREATE POLICY "Users can insert their own subscriptions"
+  ON subscriptions FOR INSERT
+  WITH CHECK (auth.uid() = user_id);
+
+-- Webhooks policies
 DROP POLICY IF EXISTS "Users can view their own webhooks" ON webhooks;
 CREATE POLICY "Users can view their own webhooks"
   ON webhooks FOR SELECT
   USING (auth.uid() = user_id);
 
-DROP POLICY IF EXISTS "Users can insert their own webhooks" ON webhooks;
-CREATE POLICY "Users can insert their own webhooks"
-  ON webhooks FOR INSERT
-  WITH CHECK (auth.uid() = user_id);
-
-DROP POLICY IF EXISTS "Admins can view all webhooks" ON webhooks;
-CREATE POLICY "Admins can view all webhooks"
+DROP POLICY IF EXISTS "Admin can view all webhooks" ON webhooks;
+CREATE POLICY "Admin can view all webhooks"
   ON webhooks FOR SELECT
   USING (EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND is_admin = TRUE));
 

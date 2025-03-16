@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -15,14 +14,12 @@ export default function InitializeAdmin() {
 
   const checkAdminExists = async () => {
     try {
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("username", "Uchtam")
-        .eq("is_admin", true);
-
-      if (error) throw error;
-      setAdminExists(data && data.length > 0);
+      // Check local storage for admin user
+      const users = JSON.parse(localStorage.getItem("algoz_users") || "[]");
+      const adminExists = users.some(
+        (user: any) => user.username === "Uchtam" && user.isAdmin === true,
+      );
+      setAdminExists(adminExists);
     } catch (err: any) {
       console.error("Error checking admin:", err);
       setError(err.message);
@@ -35,24 +32,23 @@ export default function InitializeAdmin() {
     setSuccess(null);
 
     try {
-      const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-admin-user`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-          },
-        },
-      );
+      // Create admin user in local storage
+      const adminUser = {
+        id: "admin-id",
+        email: "UCHTAMSINGH@gmail.com",
+        password: "@Aa0000Zz", // In a real app, this would be hashed
+        username: "Uchtam",
+        clientId: "01",
+        isAdmin: true,
+        zCoins: 1000000,
+        phoneNumber: "+1234567890",
+      };
 
-      const data = await response.json();
+      const users = JSON.parse(localStorage.getItem("algoz_users") || "[]");
+      users.push(adminUser);
+      localStorage.setItem("algoz_users", JSON.stringify(users));
 
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to create admin user");
-      }
-
-      setSuccess(data.message || "Admin user created successfully");
+      setSuccess("Admin user created successfully");
       setAdminExists(true);
     } catch (err: any) {
       console.error("Error creating admin:", err);
@@ -86,7 +82,7 @@ export default function InitializeAdmin() {
                   <strong>Login ID:</strong> Uchtam
                 </p>
                 <p>
-                  <strong>Email:</strong> UCHTAMSINGH@gmail.com
+                  <strong>Email:</strong> uchtamsingh@gmail.com
                 </p>
                 <p>
                   <strong>Password:</strong> @Aa0000Zz

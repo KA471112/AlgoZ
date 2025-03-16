@@ -31,13 +31,11 @@ type AuthContextType = {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  console.log("AuthProvider initialized");
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
-    console.log("AuthProvider useEffect running");
     // Check active session and set user
     const getSession = async () => {
       setLoading(true);
@@ -74,7 +72,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const fetchUserProfile = async (userId: string) => {
-    console.log("Fetching user profile for ID:", userId);
     // Get user profile
     const { data: profile, error: profileError } = await supabase
       .from("profiles")

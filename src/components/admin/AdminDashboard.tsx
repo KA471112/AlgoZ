@@ -5,8 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useAuth } from "@/lib/auth";
-import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/lib/mockAuth";
 import {
   Table,
   TableBody,
@@ -55,42 +54,31 @@ export default function AdminDashboard() {
   const fetchUsers = async () => {
     setLoading(true);
     try {
-      // Get all users except the current admin
-      const { data: profiles, error: profilesError } = await supabase
-        .from("profiles")
-        .select("*")
-        .neq("id", user?.id || "");
+      // Mock user data instead of fetching from Supabase
+      const mockUsers = [
+        {
+          id: "user-1",
+          username: "JohnDoe",
+          client_id: "02",
+          email: "john@example.com",
+          phone: "+1234567890",
+          created_at: new Date().toISOString(),
+          balance: 75000,
+          api_count: 2,
+        },
+        {
+          id: "user-2",
+          username: "JaneSmith",
+          client_id: "03",
+          email: "jane@example.com",
+          phone: "+9876543210",
+          created_at: new Date().toISOString(),
+          balance: 120000,
+          api_count: 3,
+        },
+      ];
 
-      if (profilesError) throw profilesError;
-
-      // Get balances for all users
-      const { data: balances, error: balancesError } = await supabase
-        .from("z_coins_balance")
-        .select("*");
-
-      if (balancesError) throw balancesError;
-
-      // Get API connection counts
-      const { data: apiCounts, error: apiCountsError } = await supabase
-        .from("api_connections")
-        .select("user_id, count")
-        .group("user_id");
-
-      if (apiCountsError) throw apiCountsError;
-
-      // Combine the data
-      const usersWithData = profiles.map((profile) => {
-        const balanceRecord = balances.find((b) => b.id === profile.id);
-        const apiCountRecord = apiCounts.find((a) => a.user_id === profile.id);
-
-        return {
-          ...profile,
-          balance: balanceRecord?.balance || 0,
-          api_count: apiCountRecord?.count || 0,
-        };
-      });
-
-      setUsers(usersWithData);
+      setUsers(mockUsers);
     } catch (error) {
       console.error("Error fetching users:", error);
     } finally {
@@ -102,44 +90,7 @@ export default function AdminDashboard() {
     if (!selectedUser || adjustmentAmount <= 0) return;
 
     try {
-      // Get current balance
-      const { data: currentBalance, error: balanceError } = await supabase
-        .from("z_coins_balance")
-        .select("balance")
-        .eq("id", selectedUser.id)
-        .single();
-
-      if (balanceError) throw balanceError;
-
-      const newBalance =
-        adjustmentType === "add"
-          ? currentBalance.balance + adjustmentAmount
-          : currentBalance.balance - adjustmentAmount;
-
-      // Update balance
-      const { error: updateError } = await supabase
-        .from("z_coins_balance")
-        .update({ balance: newBalance })
-        .eq("id", selectedUser.id);
-
-      if (updateError) throw updateError;
-
-      // Record transaction
-      const { error: transactionError } = await supabase
-        .from("z_coins_transactions")
-        .insert({
-          user_id: selectedUser.id,
-          amount: adjustmentAmount,
-          transaction_type:
-            adjustmentType === "add" ? "admin_adjustment" : "deduction",
-          description:
-            adjustmentDescription ||
-            `Admin ${adjustmentType === "add" ? "added" : "deducted"} Z Coins`,
-        });
-
-      if (transactionError) throw transactionError;
-
-      // Update local state
+      // Update local state only (no Supabase)
       setUsers((prevUsers) =>
         prevUsers.map((u) =>
           u.id === selectedUser.id

@@ -18,20 +18,13 @@ import AuthGuard from "./components/auth/AuthGuard";
 import InitializeAdmin from "./components/auth/InitializeAdmin";
 import routes from "tempo-routes";
 import { ThemeProvider } from "./components/theme-provider";
-import { AuthProvider } from "./lib/auth";
-import { LoadingSpinner } from "./components/ui/loading-spinner";
+import { AuthProvider } from "./lib/mockAuth";
 
 function App() {
   return (
     <ThemeProvider defaultTheme="dark">
       <AuthProvider>
-        <Suspense
-          fallback={
-            <div className="min-h-screen flex items-center justify-center bg-background">
-              <LoadingSpinner size="lg" />
-            </div>
-          }
-        >
+        <Suspense fallback={<p>Loading...</p>}>
           <>
             <Routes>
               {/* Public routes */}
